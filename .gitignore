@@ -1,0 +1,29 @@
+# Build artifacts
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstats
+.vs/
+
+# Data
+Backend/Data/
+
+# IDE
+.idea/
+*.swp
+*.swo
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+*.env
+appsettings.*.local.json
+
+# Claude
+.claude/
