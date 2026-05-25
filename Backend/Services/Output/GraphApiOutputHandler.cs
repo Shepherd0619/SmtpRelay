@@ -71,25 +71,54 @@ public class GraphApiOutputHandler : IOutputHandler
                 Content = body
             };
 
-            if (mimeMessage.Attachments.Any())
+            if (mimeMessage.Attachments.Any() || mimeMessage.BodyParts.Any())
             {
                 graphMessage.Attachments = new List<Microsoft.Graph.Models.Attachment>();
 
                 foreach (var attachment in mimeMessage.Attachments)
                 {
-                    if (attachment is not MimePart { Content: not null } part)
-                        continue;
-
-                    using var attachStream = new MemoryStream();
-                    await part.Content.DecodeToAsync(attachStream, ct);
-
-                    graphMessage.Attachments.Add(new Microsoft.Graph.Models.FileAttachment
+                    if (attachment is MimePart { Content: not null } part)
                     {
-                        Name = part.FileName ?? "unnamed",
-                        ContentType = part.ContentType.MimeType,
-                        ContentBytes = attachStream.ToArray(),
-                        ContentId = part.ContentId
-                    });
+                        using var attachStream = new MemoryStream();
+                        await part.Content.DecodeToAsync(attachStream, ct);
+
+                        graphMessage.Attachments.Add(new Microsoft.Graph.Models.FileAttachment
+                        {
+                            Name = part.FileName ?? "unnamed",
+                            ContentType = part.ContentType.MimeType,
+                            ContentBytes = attachStream.ToArray(),
+                            ContentId = part.ContentId
+                        });
+                    }
+                }
+
+                // Handle inline images referenced via cid: in HTML body
+                var attachmentContentIds = new HashSet<string>(
+                    mimeMessage.Attachments
+                        .OfType<MimePart>()
+                        .Select(a => a.ContentId)
+                        .Where(id => !string.IsNullOrEmpty(id))
+                    .Select(id => id!)
+                );
+
+                foreach (var bodyPart in mimeMessage.BodyParts)
+                {
+                    if (bodyPart is MimePart { Content: not null } part
+                        && !string.IsNullOrEmpty(part.ContentId)
+                        && !attachmentContentIds.Contains(part.ContentId))
+                    {
+                        using var attachStream = new MemoryStream();
+                        await part.Content.DecodeToAsync(attachStream, ct);
+
+                        graphMessage.Attachments.Add(new Microsoft.Graph.Models.FileAttachment
+                        {
+                            Name = part.FileName ?? part.ContentId,
+                            ContentType = part.ContentType.MimeType,
+                            ContentBytes = attachStream.ToArray(),
+                            ContentId = part.ContentId,
+                            IsInline = true
+                        });
+                    }
                 }
             }
 

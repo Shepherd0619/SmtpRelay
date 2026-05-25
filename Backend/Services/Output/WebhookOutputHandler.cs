@@ -113,7 +113,36 @@ public class WebhookOutputHandler : IOutputHandler
                     fileName = part.FileName,
                     contentType = part.ContentType.MimeType,
                     contentBase64 = Convert.ToBase64String(ms.ToArray()),
-                    contentId = part.ContentId
+                    contentId = part.ContentId,
+                    isInline = false
+                });
+            }
+        }
+
+        // Include inline images referenced via cid: in HTML body
+        var attachmentContentIds = new HashSet<string>(
+            mimeMessage.Attachments
+                .OfType<MimePart>()
+                .Select(a => a.ContentId)
+                .Where(id => !string.IsNullOrEmpty(id))
+                .Select(id => id!)
+        );
+
+        foreach (var bodyPart in mimeMessage.BodyParts)
+        {
+            if (bodyPart is MimePart { Content: not null } part
+                && !string.IsNullOrEmpty(part.ContentId)
+                && !attachmentContentIds.Contains(part.ContentId))
+            {
+                using var ms = new MemoryStream();
+                await part.Content.DecodeToAsync(ms);
+                attachments.Add(new
+                {
+                    fileName = part.FileName ?? part.ContentId,
+                    contentType = part.ContentType.MimeType,
+                    contentBase64 = Convert.ToBase64String(ms.ToArray()),
+                    contentId = part.ContentId,
+                    isInline = true
                 });
             }
         }
