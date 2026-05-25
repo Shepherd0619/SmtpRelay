@@ -2,6 +2,11 @@
 
 Production-ready SMTP relay service for .NET 8. Receives emails via SMTP and delivers them through all enabled output channels — Microsoft Graph API (Outlook), downstream SMTP relay, or custom webhook endpoints.
 
+## Purpose
+- **OAuth2 SMTP Relay**: Provides a workaround for homelab notifications when your email provider has deprecated traditional SMTP authentication (e.g., App Passwords, basic auth) in favor of modern OAuth2.
+- **Event-Driven Workflows**: Enables automated triggering of custom workflows based on inbound and outbound email events.
+- **Bring your own solution**: Offers the flexibility to process, route, or handle email payloads using your preferred downstream tools.
+
 ## Quick Start
 
 ```bash
@@ -172,3 +177,12 @@ services:
 | Microsoft.Data.Sqlite | Persistent message queue |
 | Polly | Retry policies |
 | Swashbuckle | Swagger UI |
+
+## Contribution
+We welcome contributions from anyone with an engineering mindset, especially those utilizing AI-assisted development tools like Claude Code.
+
+To respect everyone's time, please adhere to the following guidelines:
+
+- **Pre-Submission Review**: Thoroughly review and test your code locally before opening a pull request.
+
+- **Quality Standards**: Maintain clean, documented, and high-quality code. We reserve the right to close low-quality or spam pull requests without review.
