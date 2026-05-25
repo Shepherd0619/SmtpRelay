@@ -71,6 +71,28 @@ public class GraphApiOutputHandler : IOutputHandler
                 Content = body
             };
 
+            if (mimeMessage.Attachments.Any())
+            {
+                graphMessage.Attachments = new List<Microsoft.Graph.Models.Attachment>();
+
+                foreach (var attachment in mimeMessage.Attachments)
+                {
+                    if (attachment is not MimePart { Content: not null } part)
+                        continue;
+
+                    using var attachStream = new MemoryStream();
+                    await part.Content.DecodeToAsync(attachStream, ct);
+
+                    graphMessage.Attachments.Add(new Microsoft.Graph.Models.FileAttachment
+                    {
+                        Name = part.FileName ?? "unnamed",
+                        ContentType = part.ContentType.MimeType,
+                        ContentBytes = attachStream.ToArray(),
+                        ContentId = part.ContentId
+                    });
+                }
+            }
+
             if (!string.IsNullOrEmpty(graphConfig.UserId))
             {
                 if (graphConfig.CreateDraftsBeforeSending)
