@@ -76,6 +76,10 @@ SmtpRelay__GraphApi__Enabled=true
 SmtpRelay__GraphApi__TenantId=...
 ```
 
+For Graph API permission, you must grant `Mail.ReadWrite` for drafting a message and `Mail.Send` to send the message.
+
+For security purpose, it's suggested to use a service account and configure a clear scope of `SendAs` permission for shared mailbox.
+
 ### SMTP Server
 
 | Key | Default | Description |
