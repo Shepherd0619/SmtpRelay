@@ -53,6 +53,19 @@ global using SmtpServerStorage = SmtpServer.Storage;    // IMessageStore, Messag
 
 Always use the alias prefix (e.g. `SmtpServerStorage.IMessageStore`) inside any file within the `SmtpRelay.App.SmtpServer` namespace. Outside that namespace, use `using SmtpServer.Storage;` directly.
 
+## Output Channel Limits
+
+### Graph API (App-Only Auth)
+
+With application permissions (`ClientSecretCredential`), the Microsoft Graph API `/users/{id}/sendMail` endpoint only supports **user mailboxes and shared mailboxes**. M365 groups and distribution lists cannot be used as the sender (`From` address) because they are not represented as user objects in Exchange Online. This is a platform limitation documented by Microsoft.
+
+- **User/shared mailbox as sender** → use Graph API output channel
+- **M365 group as sender** → use SMTP output channel with Exchange Online SMTP AUTH (port 587, STARTTLS), which respects traditional `SendAs` delegation
+
+The GraphApiOutputHandler resolves the sender by:
+1. Extracting the bare email from `message.From` (handles `"Name" <addr>` format)
+2. Calling `POST /users/{fromEmail}/sendMail` — if 404, the sender is not a user mailbox and Graph API cannot handle it
+
 ## Key Design Decisions
 
 - **SQLite, not Redis/RabbitMQ** — zero external deps for the queue, survives restarts

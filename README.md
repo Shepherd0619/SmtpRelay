@@ -81,10 +81,7 @@ SmtpRelay__GraphApi__Enabled=true
 SmtpRelay__GraphApi__TenantId=...
 ```
 
-For Graph API permission, you must grant `Mail.ReadWrite` for drafting a message and `Mail.Send` to send the message.
-
-For security purpose, it's suggested to use a service account and configure a clear scope of `SendAs` permission for shared mailbox.
-
+## Output Channel Considerations
 ### SMTP Server
 
 | Key | Default | Description |
@@ -108,6 +105,19 @@ For security purpose, it's suggested to use a service account and configure a cl
 | `GraphApi:UserId` | Target mailbox (user ID or UPN) |
 | `GraphApi:SaveToSentItems` | Save to Sent Items folder |
 | `GraphApi:CreateDraftsBeforeSending` | Create draft then send (matches n8n behavior) |
+
+When using **application permissions** (client credentials), the Graph API can only send from **user mailboxes and shared mailboxes**. Attempting to set `From` to an M365 group address will fail — this is a Microsoft Graph API limitation, not a bug in this project. Groups and distribution lists are not represented as user objects in Exchange Online and cannot be used as senders with app-only auth.
+
+| Sender Type | Graph API | SMTP Output |
+|-------------|-----------|-------------|
+| User mailbox | Supported | Supported |
+| Shared mailbox | Supported | Supported |
+| M365 Group | **Not supported** | Supported (SendAs required) |
+| Distribution list | **Not supported** | Not supported |
+
+**For M365 groups**, use the **SMTP output channel** instead. Configure it with Exchange Online's SMTP endpoint (`smtp.office365.com:587`, STARTTLS) and credentials that have `SendAs` permission on the group. SMTP AUTH respects traditional mailbox delegation, unlike Graph API app-only auth.
+
+For Graph API permission, you must grant `Mail.Send` (and optionally `Group.Read.All` for runtime group resolution).
 
 ### SMTP Output (Relay)
 
